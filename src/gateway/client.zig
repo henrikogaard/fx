@@ -364,6 +364,7 @@ const UsageGetOperation = struct {
                 extra_count += 3;
             },
         }
+        try http_pool.prepareTls(&client, uri);
         var req = try client.request(.GET, uri, .{
             .headers = .{
                 .accept_encoding = .omit,
@@ -419,6 +420,7 @@ fn fetchGatewayGetAtUrl(alloc: std.mem.Allocator, api_key: ?[]const u8, gateway_
     var out: std.Io.Writer.Allocating = .init(alloc);
     defer out.deinit();
 
+    try http_pool.prepareTls(&client, try std.Uri.parse(url));
     const result = try client.fetch(.{
         .location = .{ .url = url },
         .method = .GET,
@@ -569,6 +571,7 @@ fn fetchGatewayJsonAtUrlCore(
     var extra_headers_buf: [1]std.http.Header = undefined;
     const extra_headers = gatewayModelCatalogExtraHeaders(&extra_headers_buf, gateway_team);
 
+    try http_pool.prepareTls(&client, uri);
     var req = client.request(.GET, uri, .{
         .headers = headers,
         .extra_headers = extra_headers,
@@ -686,6 +689,7 @@ pub fn postGatewayCompletion(
         var out: std.Io.Writer.Allocating = .init(alloc);
         defer out.deinit();
 
+        try http_pool.prepareTls(&client, try std.Uri.parse(request_url));
         const result = client.fetch(.{
             .location = .{ .url = request_url },
             .method = .POST,
@@ -1035,6 +1039,7 @@ const RequestOpenOperation = struct {
             );
         }
         if (self.pool) |pool| return pool.openRequest(.POST, self.uri, self.options);
+        try http_pool.prepareTls(self.client, self.uri);
         return self.client.request(.POST, self.uri, self.options);
     }
 };
@@ -2257,6 +2262,7 @@ pub const PostOperation = struct {
             .user_agent = .{ .override = user_agent },
         };
         if (self.authorization) |value| headers.authorization = .{ .override = value };
+        try http_pool.prepareTls(self.client, self.uri);
         return .{ .request = try self.client.request(.POST, self.uri, .{
             .headers = headers,
             .extra_headers = self.extra_headers,
